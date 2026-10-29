@@ -1,32 +1,23 @@
-"""Entry point for the Windows executable."""
+"""Windows 桌面 exe 入口，不启动 Web 服务。"""
 import sys
-from pathlib import Path
+import tkinter as tk
+from tkinter import messagebox
 
-from streamlit.web import cli
-import duties
-import finance  # Included explicitly: app.py is loaded dynamically by Streamlit.
+from app import OutingApp, PROJECT_URL, VERSION
 
 
 def main():
+    root = tk.Tk()
+    root.withdraw()
+    OutingApp(root)
     if sys.platform == 'win32' and getattr(sys, 'frozen', False):
-        import ctypes
-        ctypes.windll.user32.MessageBoxW(
-            None,
-            '最新版本请访问：\nhttps://github.com/maojianhuan/lingfeng_hiking\n\n点击“确定”后启动程序。',
-            '凌峰出队助手',
-            0x40,
+        messagebox.showinfo(
+            f'凌峰出队助手 v{VERSION}',
+            f'最新版本请访问：\n{PROJECT_URL}\n\n点击“确定”后启动桌面程序。',
+            parent=root,
         )
-    root = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
-    sys.argv = [
-        'streamlit', 'run', str(root / 'app.py'),
-        '--global.developmentMode=false',
-        '--server.address=127.0.0.1',
-        '--server.port=8501',
-        '--server.headless=false',
-        '--browser.serverAddress=localhost',
-        '--browser.gatherUsageStats=false',
-    ]
-    cli.main()
+    root.deiconify()
+    root.mainloop()
 
 
 if __name__ == '__main__':
