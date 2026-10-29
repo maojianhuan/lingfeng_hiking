@@ -110,7 +110,7 @@ git tag -a v0.1.0 -m "首个发布版本"
 git push origin v0.1.0
 ```
 
-当前配置只上传 Actions 构建产物，不自动创建 GitHub Release。如需长期发布，可在仓库 Releases 中基于版本标签创建发布并附上验证过的 exe。源码仓库包含虚构样例 `data/samples/demo_signup.xlsx`，用户可下载后在界面上传，或选择自己的真实明细文件。
+手动 Run workflow 只生成 Actions 构建产物；推送 `v*` 标签会在构建成功后自动创建对应的 GitHub Release 并直接附上 `LingfengFinance.exe`，无需下载 ZIP 后再手动上传。使用内置 `GITHUB_TOKEN` 的 `contents: write` 权限，无需另配令牌。同一版本标签只发布一次，后续更新使用新标签。自动构建成功不代表 Windows 上的所有交互都已验证。源码仓库包含虚构样例 `data/samples/demo_signup.xlsx`，用户可下载后在界面上传，或选择自己的真实明细文件。
 
 
 ## 购买保险信息导出
@@ -126,3 +126,16 @@ git push origin v0.1.0
 包车费输入整数元，默认 1000 元；对讲机数量默认 2 台。
 
 财务报表直接展示登山杖费、头灯费，不再包含是否借用的独立列；费用仍按问卷借用记录自动计算。
+
+
+发布下一版本（例如 v0.2.0）：先提交并推送修改，再推送新标签。
+
+```bash
+git add .
+git commit -m "描述本次更新"
+git push origin main
+git tag -a v0.2.0 -m "发布 v0.2.0"
+git push origin v0.2.0
+```
+
+等待 Actions 成功后，用户可直接在 https://github.com/maojianhuan/lingfeng_hiking/releases/latest 下载 exe。无需手动解压或搬运构建附件；程序不会自动更新用户电脑上的旧 exe，用户仍需下载新版本。
