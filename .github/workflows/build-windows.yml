@@ -1,0 +1,32 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: x64
+      - name: Build executable
+        shell: cmd
+        run: scripts\build_windows.bat --ci
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: LingfengFinance-Windows-x64
+          path: dist/LingfengFinance.exe
+          if-no-files-found: error
+          retention-days: 30

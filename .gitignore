@@ -1,0 +1,28 @@
+# Python and local environments
+__pycache__/
+*.py[cod]
+.venv/
+.venv-build/
+venv/
+
+# Packaging outputs
+build/
+dist/
+*.spec
+*.egg-info/
+
+# Local signup data and financial reports (may contain personal information)
+*.xlsx
+!data/samples/demo_signup.xlsx
+*.xls
+~$*
+
+# Local secrets and editor settings
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
