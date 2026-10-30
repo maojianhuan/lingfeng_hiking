@@ -11,8 +11,13 @@ def assign_duties(members):
         raise ValueError('五项职能各需一名负责人，普通队员至少需要 5 人')
     for i in participants:
         m = members[i]
-        if not isinstance(m.get('是否新人'), bool) or not m.get('校区'):
-            raise ValueError(f"{m['姓名']}缺少校区或是否新人，请补全报名明细（是否新人填写是或否）")
+        missing = []
+        if not m.get('校区'):
+            missing.append('校区')
+        if not isinstance(m.get('是否新人'), bool):
+            missing.append('是否新人')
+        if missing:
+            raise ValueError(f"{m['姓名']}缺少{'、'.join(missing)}，请补全报名明细（是否新人／是否纯新人填写是或否）")
     if sum(members[i]['校区'] == '学院路' for i in participants) < 3:
         raise ValueError('装备、后勤、队医各需一名学院路校区负责人，普通队员中至少需要 3 名学院路成员')
     result = [{**m, '职能': '财务' if m['角色'] == '财务' else '',

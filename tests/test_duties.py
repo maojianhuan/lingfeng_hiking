@@ -63,7 +63,7 @@ class AssignmentTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, '至少需要 3'):
             assign_duties(source)
         source[0]['是否新人'] = None
-        with self.assertRaisesRegex(ValueError, '缺少校区或是否新人'):
+        with self.assertRaisesRegex(ValueError, '缺少是否新人'):
             assign_duties(source)
 
     def test_equipment_discount(self):
@@ -76,6 +76,14 @@ class AssignmentTests(unittest.TestCase):
             self.assertEqual(report['G2'].value, f"='费用参数'!B10*'费用参数'!B11*{int(lamp)}")
             self.assertEqual(round(params['B9'].value * params['B11'].value * pole, 2), 9.6 if pole else 0)
             self.assertEqual(round(params['B10'].value * params['B11'].value * lamp, 2), 6.4 if lamp else 0)
+
+    def test_original_questionnaire(self):
+        result = read_members('data/samples/demo_signup.xlsx')
+        self.assertTrue(result)
+        self.assertTrue(all(m['校区'] and isinstance(m['是否新人'], bool) for m in result))
+        for i, member in enumerate(result):
+            member['角色'] = '领队' if i == 0 else '财务' if i == 1 else '队员'
+        self.assertEqual(len(assign_duties(result)), len(result))
 
     def test_import_fields(self):
         wb = Workbook()

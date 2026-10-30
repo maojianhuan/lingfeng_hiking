@@ -3,13 +3,14 @@ from pathlib import Path
 from zipfile import BadZipFile
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+from tkinter.font import nametofont
 
 from openpyxl.utils.exceptions import InvalidFileException
 
 from duties import assign_duties, duty_rows
 from finance import make_insurance_report, make_report, read_members
 
-VERSION = '0.3.1'
+VERSION = '0.3.2'
 PROJECT_URL = 'https://github.com/maojianhuan/lingfeng_hiking'
 
 
@@ -24,9 +25,10 @@ class OutingApp:
         root.title(f'凌峰出队助手 v{VERSION}')
         root.geometry('1040x740')
         root.minsize(880, 640)
+        font_family = nametofont('TkDefaultFont', root=root).actual('family')
         style = ttk.Style(root)
-        style.configure('Title.TLabel', font=('Microsoft YaHei UI', 20, 'bold'))
-        style.configure('Heading.TLabel', font=('Microsoft YaHei UI', 11, 'bold'))
+        style.configure('Title.TLabel', font=(font_family, 20, 'bold'))
+        style.configure('Heading.TLabel', font=(font_family, 11, 'bold'))
         outer = ttk.Frame(root, padding=20)
         outer.pack(fill='both', expand=True)
         ttk.Label(outer, text='凌峰出队助手', style='Title.TLabel').pack(anchor='w')
@@ -47,7 +49,7 @@ class OutingApp:
         member_panel.columnconfigure(0, weight=1)
         ttk.Label(member_panel, text='单击姓名切换是否出队').grid(row=0, column=0, sticky='w', pady=(0, 8))
         self.member_list = tk.Listbox(member_panel, selectmode=tk.MULTIPLE, exportselection=False,
-                                     width=23, activestyle='none', font=('Microsoft YaHei UI', 11),
+                                     width=23, activestyle='none', font=(font_family, 11),
                                      selectbackground='#246B55', selectforeground='white',
                                      relief='flat', borderwidth=0)
         self.member_list.grid(row=1, column=0, sticky='nsew')
@@ -91,7 +93,7 @@ class OutingApp:
         preview.rowconfigure(0, weight=1)
         preview.columnconfigure(0, weight=1)
         self.preview = tk.Text(preview, width=50, height=11, wrap='word', state='disabled',
-                               font=('Microsoft YaHei UI', 11), relief='flat', padx=6, pady=6)
+                               font=(font_family, 11), relief='flat', padx=6, pady=6)
         self.preview.grid(row=0, column=0, sticky='nsew')
         preview_scroll = ttk.Scrollbar(preview, orient='vertical', command=self.preview.yview)
         preview_scroll.grid(row=0, column=1, sticky='ns')

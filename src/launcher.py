@@ -1,4 +1,4 @@
-"""Windows 桌面 exe 入口，不启动 Web 服务。"""
+"""跨平台桌面程序入口，不启动 Web 服务。"""
 import sys
 import tkinter as tk
 from tkinter import messagebox

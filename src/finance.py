@@ -17,6 +17,7 @@ def read_members(source):
                 headers = [re.sub(r'^\d+\.\s*', '', h).strip() for h in headers]
                 aliases = {'你的姓名': '姓名', '提交答卷时间': '报名时间',
                            '职能志愿': '职能意向', '所在校区': '校区',
+                           '是否纯新人': '是否新人',
                            '年级（不区分大一，研一等称呼，选择入学年级）': '入学年份',
                            '年级': '入学年份',
                            '身份证号（仅用于购买保险）': '身份证号',
@@ -63,7 +64,7 @@ def read_members(source):
                     campus = None
                     if '校区' in headers:
                         raw_campus = values[headers.index('校区')]
-                        campus = str(raw_campus).strip() if raw_campus is not None else None
+                        campus = str(raw_campus).strip().lstrip('○').strip() if raw_campus is not None else None
                         if campus == '学院路校区':
                             campus = '学院路'
                     newcomer = None
