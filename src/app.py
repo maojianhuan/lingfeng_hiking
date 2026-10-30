@@ -9,7 +9,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 from duties import assign_duties, duty_rows
 from finance import make_insurance_report, make_report, read_members
 
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 PROJECT_URL = 'https://github.com/maojianhuan/lingfeng_hiking'
 
 

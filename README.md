@@ -1,8 +1,12 @@
-# 凌峰出队助手 v0.3.0
+# 凌峰出队助手 v0.3.1
 
 北航凌峰社团出队自用的处理程序，用于根据报名问卷自动安排职能、生成财务报表和购买保险名单，减少领队的重复性工作。
 
 v0.3.0 使用 Tkinter 原生桌面窗口。双击 exe 后直接操作窗口，无需浏览器、不启动网页服务、不占用网络端口。使用者无需安装 Python；全部表格处理在本机完成。获取新版本：https://github.com/maojianhuan/lingfeng_hiking
+
+## v0.3.1 修复
+
+修复 Windows exe 启动时 `cp_model_helper` DLL 加载失败：打包时显式收集 OR-Tools 的动态库。构建完成后实际运行 exe 的 `--smoke-test`，验证 CP-SAT 求解和 Tkinter 窗口初始化，通过后才上传和发布。
 
 ## v0.3.0 更新
 
