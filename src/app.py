@@ -9,7 +9,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 from duties import assign_duties, duty_rows
 from finance import make_insurance_report, make_report, read_members
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 PROJECT_URL = 'https://github.com/maojianhuan/lingfeng_hiking'
 
 
@@ -84,7 +84,7 @@ class OutingApp:
         ttk.Label(form, text='对讲机数量（台）').grid(row=2, column=1, sticky='w', padx=4)
         ttk.Spinbox(form, textvariable=self.radios, from_=0, to=999, width=18).grid(row=3, column=1, sticky='ew', padx=4, pady=5)
         ttk.Label(form, text='12 元／台').grid(row=3, column=2, sticky='w', padx=4)
-        ttk.Label(main, text='每人预收 100 元，保险 2 元；普通成员领队费 10 元（含财务），领队和副领队免收。\n登山杖 12 元、头灯 8 元，按问卷借用记录计费；包车及对讲机全员均摊。',
+        ttk.Label(main, text='每人预收 100 元，保险 2 元；普通成员领队费 10 元（含财务），领队和副领队免收。\n装备租赁暂全员八折：登山杖 9.60 元、头灯 6.40 元，按借用记录计费；包车及对讲机全员均摊。',
                   wraplength=620, justify='left').grid(row=1, column=0, sticky='ew', pady=12)
         preview = ttk.LabelFrame(main, text='自动职能安排', padding=12)
         preview.grid(row=2, column=0, sticky='nsew')
@@ -96,7 +96,7 @@ class OutingApp:
         preview_scroll = ttk.Scrollbar(preview, orient='vertical', command=self.preview.yview)
         preview_scroll.grid(row=0, column=1, sticky='ns')
         self.preview.configure(yscrollcommand=preview_scroll.set)
-        ttk.Label(preview, text='按入学年份及志愿分配；无人愿意负责时，从入学最早者中随机指定。',
+        ttk.Label(preview, text='联合优化志愿与负责人；优先自愿、其次非新人；装备、后勤、队医负责须为学院路校区。',
                   wraplength=600).grid(row=1, column=0, sticky='w', pady=(8, 0))
         exports = ttk.Frame(main)
         exports.grid(row=3, column=0, sticky='ew', pady=(12, 0))

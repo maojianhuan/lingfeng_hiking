@@ -16,7 +16,7 @@ def read_members(source):
                 headers = [str(v).strip() if v is not None else '' for v in row]
                 headers = [re.sub(r'^\d+\.\s*', '', h).strip() for h in headers]
                 aliases = {'你的姓名': '姓名', '提交答卷时间': '报名时间',
-                           '职能志愿': '职能意向',
+                           '职能志愿': '职能意向', '所在校区': '校区',
                            '年级（不区分大一，研一等称呼，选择入学年级）': '入学年份',
                            '年级': '入学年份',
                            '身份证号（仅用于购买保险）': '身份证号',
@@ -60,8 +60,23 @@ def read_members(source):
                         if not re.fullmatch(r'\d{4}', text_year):
                             raise ValueError(f'第 {number} 行入学年份须为四位年份')
                         year = int(text_year)
+                    campus = None
+                    if '校区' in headers:
+                        raw_campus = values[headers.index('校区')]
+                        campus = str(raw_campus).strip() if raw_campus is not None else None
+                        if campus == '学院路校区':
+                            campus = '学院路'
+                    newcomer = None
+                    if '是否新人' in headers:
+                        raw_newcomer = values[headers.index('是否新人')]
+                        text_newcomer = str(raw_newcomer).strip().lstrip('○') if raw_newcomer is not None else ''
+                        if text_newcomer not in ('', '是', '否'):
+                            raise ValueError(f'第 {number} 行是否新人须填写是或否')
+                        if text_newcomer:
+                            newcomer = text_newcomer == '是'
                     members.append({'姓名': str(name).strip(), '报名时间': time, '入学年份': year,
                                     '职能意向': preferences, '愿意负责': willing,
+                                    '校区': campus, '是否新人': newcomer,
                                     '身份证号': values[headers.index('身份证号')] if '身份证号' in headers else None,
                                     '手机号': values[headers.index('手机号')] if '手机号' in headers else None,
                                     '登山杖': '需要租借的装备' in headers and '登山杖' in str(values[headers.index('需要租借的装备')]),
@@ -83,15 +98,15 @@ def make_report(members, bus, radios, radio_price):
     params = wb.create_sheet('费用参数')
     for row in [('项目', '数值'), ('包车费用', bus), ('对讲机数量', radios),
                 ('对讲机单价', radio_price), ('出队人数', len(members)),
-                ('默认预收', 100), ('领队费', 10), ('保险', 2), ('登山杖', 12), ('头灯', 8)]:
+                ('默认预收', 100), ('领队费', 10), ('保险', 2), ('登山杖原价', 12), ('头灯原价', 8), ('装备租赁折扣（暂全员适用）', 0.8)]:
         params.append(row)
     ws.append(['姓名', '角色', '预收金额', '领队费', '保险', '登山杖费', '头灯费', '包车分摊', '对讲机分摊', '剩余金额'])
     for r, m in enumerate(members, 2):
         ws.append([m['姓名'], m['角色'], "='费用参数'!B6",
                    f'=IF(OR(B{r}="领队",B{r}="副领队"),0,\'费用参数\'!B7)',
                    "='费用参数'!B8",
-                   f"='费用参数'!B9*{int(m['登山杖'])}",
-                   f"='费用参数'!B10*{int(m['头灯'])}",
+                   f"='费用参数'!B9*'费用参数'!B11*{int(m['登山杖'])}",
+                   f"='费用参数'!B10*'费用参数'!B11*{int(m['头灯'])}",
                    "='费用参数'!B2/'费用参数'!B5", "='费用参数'!B3*'费用参数'!B4/'费用参数'!B5",
                    f'=ROUND(C{r}-SUM(D{r}:I{r}),2)'])
     duties = wb.create_sheet('职能安排')
