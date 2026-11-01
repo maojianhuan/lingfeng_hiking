@@ -1,10 +1,16 @@
 from datetime import datetime
 import re
+import math
 from duties import DUTIES, duty_rows
 from io import BytesIO
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
+
+
+ATTENDING = '正常出队'
+WITHDRAW_DAY_BEFORE = '提前一天退出'
+WITHDRAW_SAME_DAY = '当天退出'
 
 
 def read_members(source):
@@ -88,36 +94,68 @@ def read_members(source):
         wb.close()
 
 
-def make_report(members, bus, radios, radio_price):
+def make_report(members, bus, radios, radio_price, public_expenses=()):
     if not members:
         raise ValueError('请至少选择一名成员')
-    if bus < 0 or radios < 0 or radio_price < 0 or int(radios) != radios:
+    if any(not math.isfinite(v) or v < 0 for v in (bus, radios, radio_price)) or int(radios) != radios:
         raise ValueError('费用须非负，对讲机数量须为非负整数')
+    states = [m.get('出队状态', ATTENDING) for m in members]
+    if any(state not in (ATTENDING, WITHDRAW_DAY_BEFORE, WITHDRAW_SAME_DAY) for state in states):
+        raise ValueError('未知出队状态')
+    day_before = states.count(WITHDRAW_DAY_BEFORE)
+    full_bus_count = len(members) - day_before
+    if not full_bus_count:
+        raise ValueError('至少需要一名正常出队或当天退出的成员分摊剩余车费')
+    if bus < day_before * 20:
+        raise ValueError('包车费用不能低于提前一天退出人员的固定车费总额')
+    for name, amount in public_expenses:
+        if not str(name).strip() or not math.isfinite(amount) or amount < 0:
+            raise ValueError('公共支出须有名称且金额非负')
     wb = Workbook()
     ws = wb.active
     ws.title = '财务报表'
     params = wb.create_sheet('费用参数')
     for row in [('项目', '数值'), ('包车费用', bus), ('对讲机数量', radios),
-                ('对讲机单价', radio_price), ('出队人数', len(members)),
-                ('默认预收', 100), ('领队费', 10), ('保险', 2), ('登山杖原价', 12), ('头灯原价', 8), ('装备租赁折扣（暂全员适用）', 0.8)]:
+                ('对讲机单价', radio_price), ('结算人数（含退出）', len(members)),
+                ('默认预收', 100), ('领队费', 10), ('保险', 2), ('登山杖原价', 12), ('头灯原价', 8), ('装备租赁折扣（暂全员适用）', 0.8),
+                ('提前一天退出人数', day_before), ('车费正常分摊人数（含当天退出）', full_bus_count),
+                ('提前一天退出固定车费', 20)]:
         params.append(row)
-    ws.append(['姓名', '角色', '预收金额', '领队费', '保险', '登山杖费', '头灯费', '包车分摊', '对讲机分摊', '剩余金额'])
-    for r, m in enumerate(members, 2):
-        ws.append([m['姓名'], m['角色'], "='费用参数'!B6",
-                   f'=IF(OR(B{r}="领队",B{r}="副领队"),0,\'费用参数\'!B7)',
-                   "='费用参数'!B8",
-                   f"='费用参数'!B9*'费用参数'!B11*{int(m['登山杖'])}",
-                   f"='费用参数'!B10*'费用参数'!B11*{int(m['头灯'])}",
-                   "='费用参数'!B2/'费用参数'!B5", "='费用参数'!B3*'费用参数'!B4/'费用参数'!B5",
-                   f'=ROUND(C{r}-SUM(D{r}:I{r}),2)'])
+    expenses = wb.create_sheet('公共支出')
+    expenses.append(['支出名称', '总金额', '分摊人数'])
+    for name, amount in public_expenses:
+        expenses.append([str(name).strip(), amount, "='费用参数'!B5"])
+        expenses.cell(expenses.max_row, 1).data_type = 's'
+    headers = ['姓名', '角色', '预收金额', '领队费', '保险', '登山杖费', '头灯费', '包车分摊', '对讲机分摊', '出队状态']
+    headers += [str(name).strip() + '分摊' for name, _ in public_expenses] + ['融资', '剩余金额']
+    ws.append(headers)
+    financing_col = get_column_letter(len(headers) - 1)
+    balance_col = get_column_letter(len(headers))
+    for r, (m, state) in enumerate(zip(members, states), 2):
+        attending = state == ATTENDING
+        row = [m['姓名'], m['角色'], "='费用参数'!B6",
+               f"=IF(OR(B{r}=\"领队\",B{r}=\"副领队\"),0,'费用参数'!B7)" if attending else '=0',
+               "='费用参数'!B8",
+               f"='费用参数'!B9*'费用参数'!B11*{int(m['登山杖'])}" if attending else '=0',
+               f"='费用参数'!B10*'费用参数'!B11*{int(m['头灯'])}" if attending else '=0',
+               "='费用参数'!B14" if state == WITHDRAW_DAY_BEFORE else
+               "=('费用参数'!B2-'费用参数'!B12*'费用参数'!B14)/'费用参数'!B13",
+               "='费用参数'!B3*'费用参数'!B4/'费用参数'!B5", state]
+        row += [f"='公共支出'!B{j}/'公共支出'!C{j}" for j in range(2, len(public_expenses) + 2)]
+        row += [0, f'=ROUND(C{r}-SUM(D{r}:{financing_col}{r}),2)']
+        ws.append(row)
+        ws.cell(r, 1).data_type = 's'
+        ws.cell(r, len(headers) - 1).fill = PatternFill('solid', fgColor='FFF2CC')
     duties = wb.create_sheet('职能安排')
-    for row in duty_rows(members):
+    for row in duty_rows([m for m, state in zip(members, states) if state == ATTENDING]):
         duties.append(row)
     for r in range(2, duties.max_row + 1):
         duties.merge_cells(start_row=r, start_column=2, end_row=r, end_column=6)
     end = len(members) + 1
-    ws.append(['合计', '', *[f'=SUM({get_column_letter(c)}2:{get_column_letter(c)}{end})' for c in range(3, 11)]])
-    ws.cell(end + 3, 1, '剩余为正数应退，为负数应补；分摊保留计算精度，个人余额四舍五入到分，可能有分币尾差。')
+    ws.append(['合计', '', *[f'=SUM({get_column_letter(c)}2:{get_column_letter(c)}{end})'
+                             if c != 10 else '' for c in range(3, len(headers) + 1)]])
+    ws.cell(end + 3, 1, '剩余＝预收－各项费用－融资；正数应退，负数应补。黄色融资列默认 0，出队后手动填写，余额自动重算。')
+    ws.cell(end + 4, 1, '一天线：提前两天以上退出不纳入结算；提前一天退出承担公共物资、保险和20元车费；当天退出车费正常分摊。退出者免领队费和装备费。')
     for sheet in wb:
         sheet.freeze_panes = 'A2'
         for cell in sheet[1]:
@@ -138,9 +176,9 @@ def make_report(members, bus, radios, radio_price):
         duties.cell(r, 1).font = Font(bold=True)
     for row in ws.iter_rows(min_row=2, max_row=end + 1):
         for cell in row:
-            if 3 <= cell.column <= 10:
+            if cell.column >= 3 and cell.column != 10:
                 cell.number_format = '0.00;[Red]-0.00'
-    ws.auto_filter.ref = f'A1:J{end}'
+    ws.auto_filter.ref = f'A1:{balance_col}{end}'
     output = BytesIO()
     wb.save(output)
     return output.getvalue()
